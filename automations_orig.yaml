@@ -1,0 +1,104 @@
+  - alias: Fan off after AC off
+    trigger:
+      - platform: state
+        entity_id: switch.floor2_ac
+        to: "off"
+    action:
+      - delay: 0:20
+      - service: switch.turn_off
+        entity_id: switch.floor2_outside_air_fan
+  - alias: Fan off after Heat off
+    trigger:
+      - platform: state
+        entity_id: switch.floor2_heat
+        to: "off"
+    action:
+      - delay: 0:20
+      - service: switch.turn_off
+        entity_id: switch.floor2_outside_air_fan
+ 
+  - alias: No AC when the Heat is on
+    trigger:
+      - platform: state
+        entity_id: switch.floor2_ac
+        to: "on"
+    action:
+      - service: switch.turn_off
+        entity_id: switch.floor2_heat
+      - service: switch.turn_on
+        entity_id: switch.floor2_outside_air_fan
+
+  - alias: No Heat when the AC is on
+    trigger:
+      - platform: state
+        entity_id: switch.floor2_heat
+        to: "on"
+    action:
+      - service: switch.turn_off
+        entity_id: switch.floor2_ac
+      - service: switch.turn_on
+        entity_id: switch.floor2_outside_air_fan
+
+  - alias: Summer Night Temp adjustment
+    trigger:
+      - platform: time
+        at: '22:30:00'
+    condition:
+      condition: or
+      conditions:
+        - condition: template
+          value_template: '{{ now().month == 5 }}'
+        - condition: template
+          value_template: '{{ now().month == 6 }}'
+        - condition: template
+          value_template: '{{ now().month == 7 }}'
+        - condition: template
+          value_template: '{{ now().month == 8 }}'
+        - condition: template
+          value_template: '{{ now().month == 9 }}'
+    action:
+      - service: climate.set_temperature
+        data:
+          #entity_id: climate.upstairs_ac, climate.main_floor_ac
+          entity_id: climate.floor2_ac
+          temperature: 65
+          operation_mode: Cool
+
+  - alias: Summer Daytime Temp adjustment
+    trigger:
+      - platform: time
+        at: '09:00:00'
+    condition:
+      condition: or
+      conditions:
+        - condition: template
+          value_template: '{{ now().month == 5 }}'
+        - condition: template
+          value_template: '{{ now().month == 6 }}'
+        - condition: template
+          value_template: '{{ now().month == 7 }}'
+        - condition: template
+          value_template: '{{ now().month == 8 }}'
+        - condition: template
+          value_template: '{{ now().month == 9 }}'
+    action:
+      - service: climate.set_temperature
+        data:
+          #entity_id: climate.upstairs_ac, climate.main_floor_ac
+          entity_id: climate.floor2_ac
+          temperature: 72
+          operation_mode: Cool
+
+  # - alias: No one home Away Mode On
+  #   trigger:
+  #     - platform: state
+  #       entity_id: device_tracker.janis7, device_tracker.justin_iphone7
+  #       to: 'not_home'
+  #       for:
+  #         hours: 24
+  #   action: 
+  #     - service: climate.set_away_mode
+  #       data:
+  #         entity_id: climate.upstairs_ac, climate.upstairs_furnace, climate.main_floor_ac, climate.main_floor_heat, climate.master_bedroom_heat, climate.kitchen_heat, climate.kids_bedroom_heat, climate.entryway_heat, climate.toy_room_heat, climate.guest_bedroom_heat, climate.theater_room_heat
+  #         away_mode: 'on'
+

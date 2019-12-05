@@ -1,0 +1,6 @@
+group.all_devices:
+  entity_id: []
+sensor.dark_sky_daily_summary:
+  attribution: Powered by Dark Sky
+  entity_picture: /static/images/darksky/weather-pouring.svg
+  friendly_name: Dark Sky Daily Summary
