@@ -1,0 +1,360 @@
+homeassistant:
+  # Name of the location where Home Assistant is running
+  name: Home
+  # Location required to calculate the time the sun rises and sets
+  latitude:  !secret home_latitude
+  longitude: !secret home_longitude
+  # Impacts weather/sunrise data (altitude above sea level in meters)
+  elevation: 0
+  # metric for Metric, imperial for Imperial
+  unit_system: imperial
+  # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  time_zone: America/New_York
+  # Customization file
+  customize: !include customize.yaml
+
+# Set LoveLace UI to be configured in yaml mode instead of of UI
+#lovelace:
+#  mode: yaml
+  
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+frontend:
+  javascript_version: latest
+# Show the introduction message on startup.
+introduction:
+
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+# http:
+#   base_url: example.duckdns.org:8123
+
+updater:
+# Discover some devices automatically
+discovery:
+# Enables support for tracking state changes over time
+recorder:
+  purge_keep_days: 7
+  purge_interval: 1
+#  include:
+#  exclude:
+history:
+#  include:
+#  exclude:
+
+# View all events in a logbook
+logbook:
+
+# Enables a map showing the location of tracked devices
+map:
+
+# Track the Sun
+sun:
+
+# Bluetooth Tracking
+#device_tracker:
+#  - platform: bluetooth_tracker
+  #   track_new_devices: false
+    
+  # - platform: !secret home_router_platform
+  #   host: !secret home_router_ip
+  #   username: !secret home_router_uid
+  #   password: !secret home_router_pwd
+  #   interval_seconds: 10
+  #   consider_home: 180
+  #   new_device_defaults:
+  #     track_new_devices: false
+
+# Text to speech
+tts:
+  - platform: google_translate
+    service_name: google_say
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+
+# Weather Darksky
+weather:
+  - platform: darksky
+    name: Weather
+    api_key: !secret my_darksky_api
+    mode: daily
+    
+# Cameras
+camera:
+  - platform: generic
+    still_image_url: 'https://radblast.wunderground.com/cgi-bin/radar/WUNIDS_map?station=DIX&brand=wui&num=10&delay=50&type=N0R&frame=0&scale=1.000&noclutter=0&showstorms=0&mapx=400&mapy=240&centerx=400&centery=240&transx=0&transy=0&showlabels=1&severe=0&rainsnow=0&lightning=0&smooth=0&rand=25876982&lat=0&lon=0&label=you'
+    name: Radar_WU_Pen_Argy_PA_Current
+
+    
+# Displays the configurator in bookmarks bar
+panel_iframe:
+  configurator:
+    title: Configurator
+    icon: mdi:wrench
+    url: !secret my_hassio_cfg_url
+    
+  tasmoadmin:
+    title: Tasmo Admin
+    icon: mdi:lightbulb-on
+    url: !secret my_hassio_tasmo_url
+    
+  mdiindex:
+    title: MDI Icon Index
+    icon: mdi:vector-square
+    url: https://cdn.rawgit.com/james-fry/home-assistant-mdi/efd95d7a/home-assistant-mdi.html
+  
+  ide:
+    title: IDE
+    icon: mdi:code-braces
+    url: !secret my_hassio_ide_url 
+    
+mqtt:
+  broker: !secret my_mqtt_url
+  username: !secret my_mqtt_local_uid
+  password: !secret my_mqtt_local_pwd
+  
+# Sonoff with DS18B20 temp sensor
+sensor:
+  - platform: systemmonitor
+    resources:
+      - type: disk_use_percent
+        arg: /home
+      - type: memory_free
+  - platform: template
+  
+    sensors: 
+      vesync_lrmc_instant_watts:
+        value_template: '{{ (states.switch.vesync_lrmc.attributes.current_power_w) | round(2) }}'
+        friendly_name: 'LRMC' 
+        unit_of_measurement: 'Watts'
+        icon_template: mdi:power-socket   
+      
+      vesync_lrmc_kwhrs_today:
+        value_template: '{{ (states.switch.vesync_lrmc.attributes.today_energy_kwh) | round(2) }}' 
+        friendly_name: 'LRMC KWHRS TODAY' 
+        unit_of_measurement: 'Kwh'
+        icon_template: mdi:power-socket   
+      
+      vesync_vk4ac_instant_watts:
+        value_template: '{{ (states.switch.vk4_ac_vesync.attributes.current_power_w) | round(2) }}'
+        friendly_name: 'VK4 AC' 
+        unit_of_measurement: 'Watts'
+        icon_template: mdi:power-socket   
+      
+      vesync_vk4ac_kwhrs_today:
+        value_template: '{{ (states.switch.vk4_ac_vesync.attributes.today_energy_kwh) | round(2) }}' 
+        friendly_name: 'VK4 AC KWHRS TODAY' 
+        unit_of_measurement: 'Kwh'
+        icon_template: mdi:power-socket   
+      
+      vesync_njac_instant_watts:
+        value_template: '{{ (states.switch.vesync_njac.attributes.current_power_w) | round(2) }}'
+        friendly_name: 'NJ AC' 
+        unit_of_measurement: 'Watts'
+        icon_template: mdi:power-socket   
+      
+      vesync_njac_kwhrs_today:
+        value_template: '{{ (states.switch.vesync_njac.attributes.today_energy_kwh) | round(2) }}' 
+        friendly_name: 'NJ AC KWHRS TODAY' 
+        unit_of_measurement: 'Kwh'
+        icon_template: mdi:power-socket   
+      
+  - platform: darksky
+    name: weathersns
+    api_key: !secret my_darksky_api
+    forecast:
+      - 0
+    monitored_conditions:
+      - summary
+      - icon
+      - temperature
+      - humidity
+      - wind_speed
+      - wind_gust
+      - wind_bearing
+      - hourly_summary
+    scan_interval: '00:05'
+      
+  - platform: mqtt
+    name: "floor2_mbr_temp_ambient"
+    state_topic: "vk3ha/esp4ch0_hvac1/tele/SENSOR"
+    value_template: "{{ value_json['DS18B20'].Temperature }}"
+    unit_of_measurement: "°F"
+    availability_topic: "vk3ha/esp4ch0_hvac1/tele/LWT"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+#               fl = front left room
+  - platform: mqtt
+    name: "floor2_fl_th16_ambient"
+    state_topic: "tele/sonofftas3/SENSOR"
+    value_template: "{{ value_json['AM2301'].Temperature }}"
+    unit_of_measurement: "°F"
+    availability_topic: "tele/sonofftas3/LWT"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+#               fl = front left room
+  - platform: mqtt
+    name: "floor2_fl_th16_humidity"
+    state_topic: "tele/sonofftas3/SENSOR"
+    value_template: "{{ value_json['AM2301'].Humidity }}"
+    unit_of_measurement: "%RH"
+    availability_topic: "tele/sonofftas3/LWT"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+
+# Sonoff Switch Master Bedroom FAN
+switch:
+  - platform: mqtt
+    name: "esp_hvac1_ac"
+    state_topic: "vk3ha/esp4ch0_hvac1/stat/RESULT"
+    value_template: "{{ value_json.POWER1 }}"
+    command_topic: "vk3ha/esp4ch0_hvac1/cmnd/POWER1"
+    availability_topic: "vk3ha/esp4ch0_hvac1/tele/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "esp_hvac1_heat"
+    state_topic: "vk3ha/esp4ch0_hvac1/stat/RESULT"
+    value_template: "{{ value_json.POWER2 }}"
+    command_topic: "vk3ha/esp4ch0_hvac1/cmnd/POWER2"
+    availability_topic: "vk3ha/esp4ch0_hvac1/tele/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "esp_hvac1_fan"
+    state_topic: "vk3ha/esp4ch0_hvac1/stat/RESULT"
+    value_template: "{{ value_json.POWER3 }}"
+    command_topic: "vk3ha/esp4ch0_hvac1/cmnd/POWER3"
+    availability_topic: "vk3ha/esp4ch0_hvac1/tele/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "esp_hvac1_rev"
+    state_topic: "vk3ha/esp4ch0_hvac1/stat/RESULT"
+    value_template: "{{ value_json.POWER4 }}"
+    command_topic: "vk3ha/esp4ch0_hvac1/cmnd/POWER4"
+    availability_topic: "vk3ha/esp4ch0_hvac1/tele/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "floor2_window_fan_th16"
+    state_topic: "stat/sonofftas3/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas3/POWER"
+    availability_topic: "tele/sonofftas3/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "floor2_noise_fan"
+    state_topic: "stat/sonofftas2/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas2/POWER"
+    availability_topic: "tele/sonofftas2/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "floor2_cool_fan"
+    state_topic: "stat/sonofftas1/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas1/POWER"
+    availability_topic: "tele/sonofftas1/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "salon_heat"
+    state_topic: "stat/sonofftas5/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas5/POWER"
+    availability_topic: "tele/sonofftas5/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: true
+  - platform: mqtt
+    name: "path_lights_outright"
+    state_topic: "stat/sonofftas6/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas6/POWER"
+    availability_topic: "tele/sonofftas6/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: true
+  - platform: mqtt
+    name: "spare1"
+    state_topic: "stat/sonofftas7/RESULT"
+    value_template: "{{ value_json.POWER }}"
+    command_topic: "cmnd/sonofftas7/POWER"
+    availability_topic: "tele/sonofftas7/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: true
+# Example configuration.yaml entry
+  - platform: vesync
+    username: vkeiper@gmail.com
+    password: vin3NAT1jack91
+    
+# Climate Control Floor 2 Master Bedroom AC\ Outside AIR mode
+#  this is used when outside air is cooler than 50deg F
+climate:
+  - platform: generic_thermostat
+    name:  "Master_Bed_Cool_Fan_Tsns"
+    heater: switch.floor2_cool_fan
+    target_sensor: sensor.floor2_fl_th16_ambient
+    min_temp: 40
+    max_temp: 80
+#    initial_operation_mode: "off"
+    min_cycle_duration:
+      seconds: 5
+    target_temp: 52
+    away_temp: 80
+    cold_tolerance: 2.0
+    hot_tolerance: 2.0
+    ac_mode: true
+    
+    
+sonoff:
+  username: vkeiper@gmail.com
+  password: vin26nat22
+  scan_interval: 60
+  grace_period: 600
+  api_region: 'us'
+  entity_prefix: True
+  debug: False
+
